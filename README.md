@@ -1,2 +1,3 @@
-# cognica-protobuf
-A gRPC service definition for Cognica
+# Cognica gRPC Service Definisions
+
+This repository provides gRPC service definitions for Cognica.
