@@ -1,0 +1,235 @@
+//
+// Cognica
+//
+// Copyright (c) 2023 Cognica, Inc.
+//
+
+syntax = "proto3";
+
+package cognica.rpc.db.document;
+
+import "document.proto";
+
+option cc_enable_arenas = true;
+
+service DocumentDBService {
+  rpc find(FindRequest) returns (FindResponse) {}
+  rpc find_batch(FindBatchRequest) returns (FindBatchResponse) {}
+
+  rpc count(CountRequest) returns (CountResponse) {}
+  rpc contains(ContainsRequest) returns (ContainsResponse) {}
+
+  rpc insert(InsertRequest) returns (InsertResponse) {}
+  rpc update(UpdateRequest) returns (UpdateResponse) {}
+  rpc remove(RemoveRequest) returns (RemoveResponse) {}
+
+  rpc create_collection(CreateCollectionRequest)
+      returns (CreateCollectionResponse) {}
+  rpc drop_collection(DropCollectionRequest) returns (DropCollectionResponse) {}
+  rpc get_collection(GetCollectionRequest) returns (GetCollectionResponse) {}
+  rpc list_collections(ListCollectionsRequest)
+      returns (ListCollectionsResponse) {}
+  rpc truncate_collection(TruncateCollectionRequest)
+      returns (TruncateCollectionResponse) {}
+
+  rpc create_index(CreateIndexRequest) returns (CreateIndexResponse) {}
+  rpc drop_index(DropIndexRequest) returns (DropIndexResponse) {}
+  rpc get_index(GetIndexRequest) returns (GetIndexResponse) {}
+}
+
+enum IndexType {
+  kPrimaryKey = 0;
+  kSecondaryKey = 1;
+  kClusteredSecondaryKey = 2;
+  kFullTextSearchIndex = 3;
+}
+
+enum IndexStatus {
+  kEnabled = 0;  // Index is in use.
+  kDisabled = 1; // Index is disabled.
+
+  kReadyToUse = 2; // Index is ready to use and will be switched to
+                   // kEnabled.
+
+  kBuildInProgress = 3; // Index is being built.
+  kBuildFinished = 4;   // Index was built successfully and will be
+                        // switched to kReady.
+
+  kDropInProgress = 5; // Index is being dropped.
+  kDropFinished = 6;   // Index was dropped successfully and will be
+                       // removed from catalog.
+};
+
+message IndexDesc {
+  uint32 index_id = 1;
+  string index_name = 2;
+  repeated string fields = 3;
+  bool unique = 4;
+  IndexType index_type = 5;
+  IndexStatus status = 7;
+  Document options = 8;
+}
+
+message CollectionInfo {
+  string collection_name = 1;
+  IndexDesc primary_key = 2;
+  repeated IndexDesc secondary_keys = 3;
+}
+
+message ProfileInfo {
+  uint64 matched = 1;
+  uint64 scanned = 2;
+  uint64 filtered = 3;
+
+  uint64 query_duration_us = 4;
+  uint64 serialization_duration_us = 5;
+}
+
+message CreateCollectionRequest { CollectionInfo collection = 1; }
+
+message CreateCollectionResponse {
+  int32 status = 1;
+  string message = 2;
+  ProfileInfo profile = 3;
+}
+
+message DropCollectionRequest { string collection_name = 1; }
+
+message DropCollectionResponse {
+  int32 status = 1;
+  string message = 2;
+  ProfileInfo profile = 3;
+}
+
+message GetCollectionRequest { string collection_name = 1; }
+
+message GetCollectionResponse {
+  int32 status = 1;
+  string message = 2;
+  CollectionInfo collection = 3;
+  ProfileInfo profile = 4;
+}
+
+message CreateIndexRequest {
+  string collection_name = 1;
+  IndexDesc index_desc = 2;
+}
+
+message CreateIndexResponse {
+  int32 status = 1;
+  string message = 2;
+  ProfileInfo profile = 3;
+}
+
+message DropIndexRequest {
+  string collection_name = 1;
+  string index_name = 2;
+}
+
+message DropIndexResponse {
+  int32 status = 1;
+  string message = 2;
+  ProfileInfo profile = 3;
+}
+
+message GetIndexRequest {
+  string collection_name = 1;
+  string index_name = 2;
+}
+
+message GetIndexResponse {
+  int32 status = 1;
+  string message = 2;
+
+  string collection_name = 3;
+  IndexDesc index_desc = 4;
+
+  ProfileInfo profile = 5;
+}
+
+message Query {
+  string collection_name = 1;
+  Document query = 2;
+}
+
+message FindRequest {
+  Query query = 1;
+  int32 limit = 2;
+  repeated string index_columns = 3;
+  repeated string columns = 4;
+  map<string, string> dtypes = 5;
+}
+
+message FindResponse {
+  int32 num_columns = 1;
+  int32 num_rows = 2;
+  bytes buffer = 3;
+  ProfileInfo profile = 4;
+}
+
+message FindBatchRequest { repeated FindRequest requests = 1; }
+
+message FindBatchResponse { repeated FindResponse responses = 1; }
+
+message CountRequest { Query query = 1; }
+
+message CountResponse {
+  int32 status = 1;
+  string message = 2;
+  int64 count = 3;
+  ProfileInfo profile = 4;
+}
+
+message ContainsRequest { Query query = 1; }
+
+message ContainsResponse {
+  int32 status = 1;
+  string message = 2;
+  bool found = 3;
+  ProfileInfo profile = 4;
+}
+
+message InsertRequest { repeated Query requests = 1; }
+
+message InsertResponse {
+  int32 status = 1;
+  string message = 2;
+  ProfileInfo profile = 3;
+}
+
+message UpdateRequest {
+  string collection_name = 1;
+  Document filter = 2;
+  Document updates = 3;
+}
+
+message UpdateResponse {
+  int32 status = 1;
+  string message = 2;
+  ProfileInfo profile = 3;
+}
+
+message RemoveRequest { repeated Query requests = 1; }
+
+message RemoveResponse {
+  int32 status = 1;
+  string message = 2;
+  ProfileInfo profile = 3;
+}
+
+message TruncateCollectionRequest { string collection_name = 1; }
+
+message TruncateCollectionResponse {
+  int32 status = 1;
+  string message = 2;
+  ProfileInfo profile = 3;
+}
+
+message ListCollectionsRequest {}
+
+message ListCollectionsResponse {
+  int32 status = 1;
+  string message = 2;
+  repeated string collection_names = 3;
+  ProfileInfo profile = 4;
+}
