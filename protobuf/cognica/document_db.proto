@@ -26,7 +26,10 @@ service DocumentDBService {
   rpc create_collection(CreateCollectionRequest)
       returns (CreateCollectionResponse) {}
   rpc drop_collection(DropCollectionRequest) returns (DropCollectionResponse) {}
+  rpc rename_collection(RenameCollectionRequest)
+      returns (RenameCollectionResponse) {}
   rpc get_collection(GetCollectionRequest) returns (GetCollectionResponse) {}
+  rpc get_collections(GetCollectionsRequest) returns (GetCollectionsResponse) {}
   rpc list_collections(ListCollectionsRequest)
       returns (ListCollectionsResponse) {}
   rpc truncate_collection(TruncateCollectionRequest)
@@ -34,6 +37,7 @@ service DocumentDBService {
 
   rpc create_index(CreateIndexRequest) returns (CreateIndexResponse) {}
   rpc drop_index(DropIndexRequest) returns (DropIndexResponse) {}
+  rpc rename_index(RenameIndexRequest) returns (RenameIndexResponse) {}
   rpc get_index(GetIndexRequest) returns (GetIndexResponse) {}
 }
 
@@ -60,20 +64,59 @@ enum IndexStatus {
                        // removed from catalog.
 };
 
-message IndexDesc {
+message IndexDescriptor {
   uint32 index_id = 1;
   string index_name = 2;
   repeated string fields = 3;
   bool unique = 4;
   IndexType index_type = 5;
-  IndexStatus status = 7;
-  Document options = 8;
+  IndexStatus status = 6;
+  Document options = 7;
+}
+
+message FTSFieldStats {
+  string field_name = 1;
+
+  int64 total_doc_count = 2;
+  int64 total_doc_size = 3;
+  int64 doc_count = 4;
+  int64 doc_size = 5;
+  int64 sum_term_freq = 6;
+  int64 sum_doc_freq = 7;
+}
+
+message FTSIndexStats {
+  int64 doc_count = 1;
+  int64 doc_size = 2;
+  repeated FTSFieldStats field_stats = 3;
+}
+
+message IndexStats {
+  uint32 index_id = 1;
+  string index_name = 2;
+
+  uint64 approximated_size = 3;
+  uint64 num_docs = 4;
+
+  uint64 accessed = 5;
+  uint64 added = 6;
+  uint64 updated = 7;
+  uint64 deleted = 8;
+  uint64 merged = 9;
+
+  int64 accessed_at = 10;
+  int64 added_at = 11;
+  int64 updated_at = 12;
+  int64 deleted_at = 13;
+  int64 merged_at = 14;
+
+  FTSIndexStats fts_stats = 15;
 }
 
 message CollectionInfo {
   string collection_name = 1;
-  IndexDesc primary_key = 2;
-  repeated IndexDesc secondary_keys = 3;
+  repeated IndexDescriptor index_descriptors = 2;
+  repeated IndexStats index_stats = 3;
 }
 
 message ProfileInfo {
@@ -101,6 +144,17 @@ message DropCollectionResponse {
   ProfileInfo profile = 3;
 }
 
+message RenameCollectionRequest {
+  string old_collection_name = 1;
+  string new_collection_name = 2;
+}
+
+message RenameCollectionResponse {
+  int32 status = 1;
+  string message = 2;
+  ProfileInfo profile = 3;
+}
+
 message GetCollectionRequest { string collection_name = 1; }
 
 message GetCollectionResponse {
@@ -110,9 +164,18 @@ message GetCollectionResponse {
   ProfileInfo profile = 4;
 }
 
+message GetCollectionsRequest { repeated string collection_names = 1; }
+
+message GetCollectionsResponse {
+  int32 status = 1;
+  string message = 2;
+  repeated CollectionInfo collections = 3;
+  ProfileInfo profile = 4;
+}
+
 message CreateIndexRequest {
   string collection_name = 1;
-  IndexDesc index_desc = 2;
+  IndexDescriptor index_desc = 2;
 }
 
 message CreateIndexResponse {
@@ -132,6 +195,18 @@ message DropIndexResponse {
   ProfileInfo profile = 3;
 }
 
+message RenameIndexRequest {
+  string collection_name = 1;
+  string old_index_name = 2;
+  string new_index_name = 3;
+}
+
+message RenameIndexResponse {
+  int32 status = 1;
+  string message = 2;
+  ProfileInfo profile = 3;
+}
+
 message GetIndexRequest {
   string collection_name = 1;
   string index_name = 2;
@@ -142,9 +217,10 @@ message GetIndexResponse {
   string message = 2;
 
   string collection_name = 3;
-  IndexDesc index_desc = 4;
+  IndexDescriptor index_desc = 4;
+  IndexStats index_stats = 5;
 
-  ProfileInfo profile = 5;
+  ProfileInfo profile = 6;
 }
 
 message Query {

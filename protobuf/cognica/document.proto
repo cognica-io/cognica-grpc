@@ -6,7 +6,7 @@
 
 syntax = "proto3";
 
-package cognica.rpc;
+package cognica.rpc.db.document;
 
 option cc_enable_arenas = true;
 

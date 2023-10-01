@@ -6,7 +6,7 @@
 
 syntax = "proto3";
 
-package cognica.rpc.ml.sentence_transformer;
+package cognica.rpc.sentence_transformer;
 
 option cc_enable_arenas = true;
 
