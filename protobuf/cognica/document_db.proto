@@ -4,6 +4,11 @@
 // Copyright (c) 2023 Cognica, Inc.
 //
 
+// clang-format off
+// protoc --cpp_out=. document_db.proto
+// protoc --grpc_out=. --plugin=protoc-gen-grpc=`which grpc_cpp_plugin` document_db.proto
+// clang-format on
+
 syntax = "proto3";
 
 package cognica.rpc.db.document;
