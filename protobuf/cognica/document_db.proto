@@ -28,6 +28,8 @@ service DocumentDBService {
   rpc update(UpdateRequest) returns (UpdateResponse) {}
   rpc remove(RemoveRequest) returns (RemoveResponse) {}
 
+  rpc explain(ExplainRequest) returns (ExplainResponse) {}
+
   rpc create_collection(CreateCollectionRequest)
       returns (CreateCollectionResponse) {}
   rpc drop_collection(DropCollectionRequest) returns (DropCollectionResponse) {}
@@ -296,6 +298,21 @@ message RemoveResponse {
   int32 status = 1;
   string message = 2;
   ProfileInfo profile = 3;
+}
+
+message ExplainRequest { repeated Query queries = 1; }
+
+message QueryPlan {
+  int32 status = 1;
+  string message = 2;
+  string collection_name = 3;
+  string index_name = 4;
+  string query_plan = 5;
+}
+
+message ExplainResponse {
+  int32 status = 1;
+  repeated QueryPlan query_plans = 2;
 }
 
 message TruncateCollectionRequest { string collection_name = 1; }
