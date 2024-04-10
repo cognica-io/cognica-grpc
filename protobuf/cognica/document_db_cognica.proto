@@ -13,7 +13,7 @@ syntax = "proto3";
 
 package cognica.rpc.db.document;
 
-import "document.proto";
+import "document_cognica.proto";
 
 option cc_enable_arenas = true;
 
