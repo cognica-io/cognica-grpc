@@ -1,0 +1,194 @@
+//
+// Cognica
+//
+// Copyright (c) 2023-2025 Cognica, Inc.
+//
+
+// clang-format off
+// protoc --cpp_out=. replication_metrics_cognica.proto
+// protoc --grpc_out=. --plugin=protoc-gen-grpc=`which grpc_cpp_plugin` replication_metrics_cognica.proto
+// clang-format on
+
+syntax = "proto3";
+
+package cognica.replication.rpc;
+
+option cc_enable_arenas = true;
+
+service ReplicationMetricsService {
+  // Get current metrics snapshot
+  rpc get_metrics(GetMetricsRequest) returns (GetMetricsResponse) {}
+
+  // Get metrics for a specific node
+  rpc get_node_metrics(GetNodeMetricsRequest) returns (GetNodeMetricsResponse) {}
+
+  // Reset all counters (for testing/debugging)
+  rpc reset_metrics(ResetMetricsRequest) returns (ResetMetricsResponse) {}
+}
+
+message ProfileInfo {
+  uint64 duration_us = 1;
+}
+
+message GetMetricsRequest {
+  bool include_histograms = 1;
+  string workspace_name = 2;  // Optional: filter by workspace (empty = all)
+}
+
+message GetMetricsResponse {
+  enum Status {
+    kInvalid = 0;
+    kSuccess = 1;
+    kWorkspaceNotFound = 2;
+    kError = 3;
+  }
+
+  Status status = 1;
+  string error_message = 2;
+  MetricsSnapshot snapshot = 3;
+  ProfileInfo profile = 4;
+}
+
+message GetNodeMetricsRequest {
+  string node_id = 1;
+  string workspace_name = 2;  // Optional: filter by workspace (empty = all)
+}
+
+message GetNodeMetricsResponse {
+  enum Status {
+    kInvalid = 0;
+    kSuccess = 1;
+    kNodeNotFound = 2;
+    kWorkspaceNotFound = 3;
+    kError = 4;
+  }
+
+  Status status = 1;
+  string error_message = 2;
+  NodeMetrics metrics = 3;
+  ProfileInfo profile = 4;
+}
+
+message ResetMetricsRequest {
+  string workspace_name = 1;  // Optional: reset specific workspace (empty = all)
+}
+
+message ResetMetricsResponse {
+  enum Status {
+    kInvalid = 0;
+    kSuccess = 1;
+    kWorkspaceNotFound = 2;
+    kError = 3;
+  }
+
+  Status status = 1;
+  string error_message = 2;
+  ProfileInfo profile = 3;
+}
+
+message MetricsSnapshot {
+  // Transaction metrics
+  TransactionMetrics transaction_metrics = 1;
+
+  // Network metrics
+  NetworkMetrics network_metrics = 2;
+
+  // Consistency metrics
+  ConsistencyMetrics consistency_metrics = 3;
+
+  // Election metrics
+  ElectionMetrics election_metrics = 4;
+
+  // Heartbeat metrics
+  HeartbeatMetrics heartbeat_metrics = 5;
+
+  // Current state (gauges)
+  GaugeMetrics gauge_metrics = 6;
+
+  // Latency percentiles
+  LatencyPercentiles commit_latency = 7;
+  LatencyPercentiles replication_latency = 8;
+
+  // Timestamp of snapshot (Unix epoch milliseconds)
+  int64 timestamp_ms = 9;
+
+  // Workspace-specific metrics (if filtered by workspace)
+  string workspace_name = 10;
+  repeated WorkspaceMetrics workspace_metrics = 11;
+}
+
+message WorkspaceMetrics {
+  string workspace_name = 1;
+  uint64 transactions_replicated = 2;
+  uint64 transactions_failed = 3;
+  uint64 bytes_replicated = 4;
+  double transactions_per_second = 5;
+}
+
+message TransactionMetrics {
+  uint64 total_transactions_replicated = 1;
+  uint64 total_transactions_failed = 2;
+  uint64 total_bytes_replicated = 3;
+  double transactions_per_second = 4;
+}
+
+message NetworkMetrics {
+  uint64 total_messages_sent = 1;
+  uint64 total_messages_received = 2;
+  uint64 total_bytes_sent = 3;
+  uint64 total_bytes_received = 4;
+  uint32 network_errors = 5;
+  double messages_per_second = 6;
+}
+
+message ConsistencyMetrics {
+  uint32 gaps_detected = 1;
+  uint32 gaps_recovered = 2;
+  uint32 snapshots_sent = 3;
+  uint32 snapshots_received = 4;
+  uint32 out_of_order_detected = 5;
+}
+
+message ElectionMetrics {
+  uint32 elections_started = 1;
+  uint32 elections_completed = 2;
+  uint32 role_changes = 3;
+}
+
+message HeartbeatMetrics {
+  uint64 heartbeats_sent = 1;
+  uint64 heartbeats_received = 2;
+  uint32 heartbeat_failures = 3;
+}
+
+message GaugeMetrics {
+  int64 replication_lag_ms = 1;
+  int32 connected_nodes = 2;
+  string current_role = 3;
+  uint64 current_sequence_number = 4;
+  uint64 applied_sequence_number = 5;
+  int32 message_queue_depth = 6;
+}
+
+message LatencyPercentiles {
+  int64 p50_us = 1;   // p50 in microseconds
+  int64 p95_us = 2;   // p95 in microseconds
+  int64 p99_us = 3;   // p99 in microseconds
+  int64 p999_us = 4;  // p999 in microseconds
+  int64 max_us = 5;   // max in microseconds
+}
+
+message NodeMetrics {
+  string node_id = 1;
+  bool is_connected = 2;
+  int64 last_heartbeat_ago_ms = 3;
+  uint64 bytes_sent = 4;
+  uint64 bytes_received = 5;
+  uint64 messages_sent = 6;
+  uint64 messages_received = 7;
+  int64 replication_lag_ms = 8;
+
+  // Workspace-specific metrics for this node
+  string workspace_name = 9;
+  repeated WorkspaceMetrics workspace_metrics = 10;
+}
